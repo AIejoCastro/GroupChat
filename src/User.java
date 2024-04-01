@@ -38,6 +38,9 @@ public class User {
         this.messageHistory = messageHistory;
     }
 
+    public void addMessageToHistory(Message message) {
+        messageHistory.add(message);
+    }
     @Override
     public String toString() {
         return "User{" +

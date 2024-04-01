@@ -60,7 +60,7 @@ public class Chat {
         ChatGroup group = groupNameToGroup.get(groupName);
         if (group != null) {
             for (User user : group.getUsers()) {
-                if (!user.getUsername().equals(senderUsername)) { // Verificar si el usuario no es el remitente
+                if (!user.getUsername().equals(senderUsername)) {
                     sendMessageToUser(user.getUsername(), senderUsername, "[" + groupName + "] " + message);
                 }
             }
@@ -103,5 +103,13 @@ public class Chat {
         } else {
             System.out.println("El grupo '" + groupName + "' no existe.");
         }
+    }
+
+    public User getUserByUsername(String username) {
+        return usernameToUser.get(username);
+    }
+
+    public ChatGroup getGroupByName(String groupName) {
+        return groupNameToGroup.get(groupName);
     }
 }
