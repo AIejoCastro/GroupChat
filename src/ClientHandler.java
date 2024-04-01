@@ -87,7 +87,7 @@ public class ClientHandler implements Runnable {
                 addMessageToUserHistory(user.getUsername(), messageSend);
                 ChatGroup recipientGroup = chatServer.getGroupByName(groupName);
                 if (recipientGroup != null) {
-                    System.out.println(messageSend.toString());
+                    System.out.println(messageSend);
                     for (User groupUser : recipientGroup.getUsers()) {
                         groupUser.addMessageToHistory(messageSend);
                     }
@@ -115,13 +115,9 @@ public class ClientHandler implements Runnable {
 
     private void handleHistoryRequest() {
         List<Message> messageHistory = user.getMessageHistory();
-        out.println(messageHistory);
         out.println("Historial de mensajes:");
         for (Message msg : messageHistory) {
-            String sender = msg.getFrom();
-            String recipient = msg.getTo();
-            String content = msg.getMessage();
-            out.println("From: " + sender + " / " + "To: " + recipient + " / " + "Message: " + content);
+            out.println("From: " + msg.getFrom() + " / " + "To: " + msg.getTo() + " / " + "Message: " + msg.getMessage());
         }
     }
 
@@ -134,15 +130,15 @@ public class ClientHandler implements Runnable {
 
     public boolean userInGroup(String username, String groupName) {
         ChatGroup group = chatServer.getGroupByName(groupName);
-        boolean flag = false;
+        boolean result = false;
         if (group != null) {
             for (User groupUser : group.getUsers()) {
                 if (groupUser.getUsername().equals(username)){
-                    flag = true;
+                    result = true;
                     break;
                 }
             }
         }
-        return flag;
+        return result;
     }
 }
