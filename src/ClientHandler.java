@@ -23,7 +23,7 @@ public class ClientHandler implements Runnable{
             User user = new User(username, clientSocket);
             chatServer.addUser(username, clientSocket);
 
-        } catch (IIOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

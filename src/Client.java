@@ -6,7 +6,7 @@ import java.util.*;
 public class Client {
 
     private static final int PORT = 6789;
-    private static final String ADDRESS = "local_host";
+    private static final String ADDRESS = "localhost";
 
     public static void main(String[] args) {
         try {
