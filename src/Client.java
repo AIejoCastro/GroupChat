@@ -1,6 +1,8 @@
+import javax.sound.sampled.AudioFormat;
 import java.io.*;
 import java.net.Socket;
-import java.util.*;
+import java.util.Base64;
+import java.util.Scanner;
 
 public class Client {
 
@@ -22,7 +24,17 @@ public class Client {
                 try {
                     String message;
                     while ((message = in.readLine()) != null) {
-                        System.out.println(message);
+                        if (message.startsWith("[VOICE]")) {
+                            // Decodificar el mensaje de audio y reproducirlo
+                            String base64Audio = message.substring("[VOICE]".length());
+                            byte[] audioData = Base64.getDecoder().decode(base64Audio);
+                            AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000, 16, 1, 2, 16000, false);
+                            PlayerRecording player = new PlayerRecording(format);
+                            player.initiateAudio(audioData);
+                        } else {
+                            System.out.println(message);
+                        }
+
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

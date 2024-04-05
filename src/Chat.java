@@ -83,6 +83,25 @@ public class Chat {
         }
     }
 
+    public void sendVoiceMessageToUser(String recipientUsername, String senderUsername, byte[] audioData) {
+        Socket recipientSocket = usernameToSocket.get(recipientUsername);
+        if (recipientSocket != null) {
+            try {
+                OutputStream outputStream = recipientSocket.getOutputStream();
+                // Primero, enviar la longitud de los datos de audio
+                DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+                dataOutputStream.writeInt(audioData.length);
+                // Luego, enviar los datos de audio
+                outputStream.write(audioData);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("El usuario " + recipientUsername + " no está conectado.");
+        }
+    }
+
+
     public void addUserToGroup(String groupName, String username) {
         ChatGroup group = groupNameToGroup.get(groupName);
         if (group != null) {

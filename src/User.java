@@ -41,6 +41,11 @@ public class User {
     public void addMessageToHistory(Message message) {
         messageHistory.add(message);
     }
+
+    public void addVoiceMessageToHistory(VoiceMessage voiceMessage) {
+        messageHistory.add(voiceMessage);
+    }
+
     @Override
     public String toString() {
         return "User{" +

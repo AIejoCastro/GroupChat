@@ -1,9 +1,10 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import javax.sound.sampled.AudioFormat;
+import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class ClientHandler implements Runnable {
 
@@ -44,18 +45,28 @@ public class ClientHandler implements Runnable {
     }
 
     private void processMessage(String message) {
-        if (message.startsWith("msg: ")) {
-            handleMessage(message);
-        } else if (message.startsWith("msggroup: ")) {
-            handleGroupMessage(message);
-        } else if (message.startsWith("creategroup: ")) {
-            handleCreateGroup(message);
-        } else if (message.startsWith("joingroup: ")) {
-            handleJoinGroup(message);
-        } else if (message.startsWith("history")) {
-            handleHistoryRequest();
+        String[] parts = message.split(":", 2);
+        if (parts.length == 2) {
+            String command = parts[0].trim();
+            String content = parts[1].trim();
+
+            if (command.equals("msg")) {
+                handleMessage(content);
+            } else if (command.equals("msggroup")) {
+                handleGroupMessage(content);
+            } else if (command.equals("creategroup")) {
+                handleCreateGroup(content);
+            } else if (command.equals("joingroup")) {
+                handleJoinGroup(content);
+            } else if (command.equals("record")) {
+                handleVoiceMessage(content);
+            } else if (command.equals("history")) {
+                handleHistoryRequest();
+            } else {
+                out.println("Comando desconocido");
+            }
         } else {
-            out.println("No existe ese comando");
+            out.println("Formato de mensaje incorrecto");
         }
     }
 
@@ -73,6 +84,48 @@ public class ClientHandler implements Runnable {
             }
         }
     }
+
+    private void handleVoiceMessage(String message) {
+        String[] parts = message.split(" ", 2);
+        if (parts.length == 2) {
+            String recipient = parts[0];
+            int duration = Integer.parseInt(parts[1]);
+
+            // Imprimir el mensaje de inicio de grabación
+            out.println("Grabando durante " + duration + " segundos...");
+
+            // Iniciar la captura de audio desde el micrófono
+            AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000, 16, 1, 2, 16000, false);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            RecordAudio recorder = new RecordAudio(format, duration, byteArrayOutputStream);
+            Thread recorderThread = new Thread(recorder);
+            recorderThread.start();
+
+            // Esperar a que la grabación termine
+            try {
+                recorderThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            // Obtener los datos de audio capturados
+            byte[] audioData = byteArrayOutputStream.toByteArray();
+
+            // Enviar el mensaje de voz al destinatario
+            chatServer.sendMessageToUser(recipient, user.getUsername(), Base64.getEncoder().encodeToString(audioData));
+            VoiceMessage voiceMessage = new VoiceMessage(user.getUsername(), recipient, audioData);
+            addVoiceMessageToUserHistory(user.getUsername(), voiceMessage);
+
+            // Agregar el mensaje de voz a la historia del usuario
+            User recipientUser = chatServer.getUserByUsername(recipient);
+            if (recipientUser != null) {
+                recipientUser.addVoiceMessageToHistory(voiceMessage);
+            }
+        }
+    }
+
+
+
 
     private void handleGroupMessage(String message) {
         String[] parts = message.split(" ", 3);
@@ -125,6 +178,13 @@ public class ClientHandler implements Runnable {
         User senderUser = chatServer.getUserByUsername(username);
         if (senderUser != null) {
             senderUser.addMessageToHistory(messageToSend);
+        }
+    }
+
+    public void addVoiceMessageToUserHistory(String username, VoiceMessage voiceMessage) {
+        User senderUser = chatServer.getUserByUsername(username);
+        if (senderUser != null) {
+            senderUser.addVoiceMessageToHistory(voiceMessage);
         }
     }
 
