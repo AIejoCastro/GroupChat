@@ -7,8 +7,10 @@ public class Chat {
 
     private static final int PORT = 6789;
     private ServerSocket serverSocket;
+    private DatagramSocket datagramSocket;
     private ExecutorService threadPool;
     private List<Socket> clientSockets;
+    private DatagramPacket receivePacket = new DatagramPacket(new byte[1024], 1024);
     private Map<String, Socket> usernameToSocket;
     private Map<String, ChatGroup> groupNameToGroup;
     private Map<String, User> usernameToUser;
@@ -16,6 +18,7 @@ public class Chat {
     public Chat() {
         try {
             serverSocket = new ServerSocket(PORT);
+            datagramSocket = new DatagramSocket(PORT);
             threadPool = Executors.newFixedThreadPool(15);
             clientSockets = new ArrayList<>();
             usernameToSocket = new HashMap<>();
@@ -102,6 +105,32 @@ public class Chat {
             }
         } else {
             System.out.println("El grupo '" + groupName + "' no existe.");
+        }
+    }
+
+    public void sendAudioToUser(String recipientUsername, String senderUsername, String message) {
+        Socket recipientSocket = usernameToSocket.get(recipientUsername);
+        if (recipientSocket != null) {
+            try {
+                PrintWriter out = new PrintWriter(recipientSocket.getOutputStream(), true);
+                out.println(senderUsername + "audio : ");
+
+                File file = new File(message);
+                FileInputStream fileInputStream = new FileInputStream(file);
+
+                // Enviar partes del archivo al cliente
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                    DatagramPacket sendPacket = new DatagramPacket(buffer, bytesRead, receivePacket.getAddress(), receivePacket.getPort());
+                    datagramSocket.send(sendPacket);
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("El usuario " + recipientUsername + " no está conectado.");
         }
     }
 
