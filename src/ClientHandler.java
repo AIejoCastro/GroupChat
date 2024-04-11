@@ -1,10 +1,10 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 public class ClientHandler implements Runnable {
 
@@ -13,10 +13,14 @@ public class ClientHandler implements Runnable {
     private BufferedReader in;
     private PrintWriter out;
     private User user;
+    private Map<String, Socket> usernameToSocket;
+    private AudioRecorder audioRecorder;
 
     public ClientHandler(Socket clientSocket, Chat chatServer) {
         this.clientSocket = clientSocket;
         this.chatServer = chatServer;
+        this.usernameToSocket = chatServer.getUsernameToSocket();
+        audioRecorder = new AudioRecorder();
     }
 
     @Override
@@ -55,6 +59,8 @@ public class ClientHandler implements Runnable {
             handleJoinGroup(message);
         } else if (message.startsWith("history")) {
             handleHistoryRequest();
+        } else if (message.startsWith("audio: ")) {
+            handleAudioMsg(message);
         } else {
             out.println("No existe ese comando");
         }
@@ -118,12 +124,28 @@ public class ClientHandler implements Runnable {
         List<Message> messageHistory = user.getMessageHistory();
         out.println("Historial de mensajes:");
         for (Message msg : messageHistory) {
-            out.println("From: " + msg.getFrom() + " / " + "To: " + msg.getTo() + " / " + "Message: " + msg.getMessage());
+            out.println(msg.toString());
         }
     }
 
-    private void handleAudioMsg() {
-
+    private void handleAudioMsg(String message) {
+        String[] parts = message.split(" ", 2);
+        if (parts.length == 2) {
+            String recipient = parts[1];
+            // Inicia la grabación de audio
+            audioRecorder.startRecording();
+            // Espera durante unos segundos para grabar el audio
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            audioRecorder.stopRecording();
+            byte[] audioData = audioRecorder.getRecordedAudio();
+            chatServer.sendAudioToUser(recipient, user.getUsername(), audioData);
+        } else {
+            System.out.println("Formato de mensaje de audio incorrecto. Debe ser 'audio: NombreDestinatario'.");
+        }
     }
 
     public void addMessageToUserHistory(String username, Message messageToSend) {

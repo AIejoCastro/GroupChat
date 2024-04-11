@@ -4,7 +4,7 @@ Alejandro Castro - A00372470
 
 Carlos Felipe Sanchez -
 
-Cristián
+Cristián Molina
 
 This software implements some commands in the client to chat, create groups and see history
 

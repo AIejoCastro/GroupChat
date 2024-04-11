@@ -31,7 +31,13 @@ public class Chat {
     }
 
     public void start() {
-        System.out.println("Servidor iniciado. Esperando clientes...");
+        System.out.println("Servidor iniciado. Esperando clientes... \n");
+        System.out.println("Lista de comandos: \n" +
+                "msg: [nombre_usuario] [nombre_destinatario] - Enviar mensaje a un usuario\n" +
+                "msggroup: [nombre_grupo] [mensaje] - Enviar mensaje a un grupo\n" +
+                "creategroup: [nombre_grupo] - Crear un grupo\n" +
+                "joingroup: [nombre_grupo] [nombre_usuario] - Unirse a un grupo\n" +
+                "audio: [usuario] - Enviar archivo de audio a un usuario\n");
         try {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
@@ -108,23 +114,25 @@ public class Chat {
         }
     }
 
-    public void sendAudioToUser(String recipientUsername, String senderUsername, String message) {
+    public void sendAudioToUser(String recipientUsername, String senderUsername, byte[] audioData) {
         Socket recipientSocket = usernameToSocket.get(recipientUsername);
         if (recipientSocket != null) {
             try {
                 PrintWriter out = new PrintWriter(recipientSocket.getOutputStream(), true);
-                out.println(senderUsername + "audio : ");
+                out.println(senderUsername + ": audio");
 
-                File file = new File(message);
-                FileInputStream fileInputStream = new FileInputStream(file);
+                // Dividir los datos de audio en fragmentos más pequeños
+                int chunkSize = 1024; // Tamaño de cada fragmento
+                int offset = 0;
+                while (offset < audioData.length) {
+                    int length = Math.min(chunkSize, audioData.length - offset);
+                    byte[] chunk = Arrays.copyOfRange(audioData, offset, offset + length);
 
-                // Enviar partes del archivo al cliente
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-                    DatagramPacket sendPacket = new DatagramPacket(buffer, bytesRead, receivePacket.getAddress(), receivePacket.getPort());
+                    // Envía el fragmento de audio al cliente
+                    DatagramPacket sendPacket = new DatagramPacket(chunk, length, recipientSocket.getInetAddress(), recipientSocket.getPort());
                     datagramSocket.send(sendPacket);
 
+                    offset += length;
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -140,5 +148,69 @@ public class Chat {
 
     public ChatGroup getGroupByName(String groupName) {
         return groupNameToGroup.get(groupName);
+    }
+
+    public ServerSocket getServerSocket() {
+        return serverSocket;
+    }
+
+    public void setServerSocket(ServerSocket serverSocket) {
+        this.serverSocket = serverSocket;
+    }
+
+    public DatagramSocket getDatagramSocket() {
+        return datagramSocket;
+    }
+
+    public void setDatagramSocket(DatagramSocket datagramSocket) {
+        this.datagramSocket = datagramSocket;
+    }
+
+    public ExecutorService getThreadPool() {
+        return threadPool;
+    }
+
+    public void setThreadPool(ExecutorService threadPool) {
+        this.threadPool = threadPool;
+    }
+
+    public List<Socket> getClientSockets() {
+        return clientSockets;
+    }
+
+    public void setClientSockets(List<Socket> clientSockets) {
+        this.clientSockets = clientSockets;
+    }
+
+    public DatagramPacket getReceivePacket() {
+        return receivePacket;
+    }
+
+    public void setReceivePacket(DatagramPacket receivePacket) {
+        this.receivePacket = receivePacket;
+    }
+
+    public Map<String, Socket> getUsernameToSocket() {
+        return usernameToSocket;
+    }
+
+    public void setUsernameToSocket(Map<String, Socket> usernameToSocket) {
+        this.usernameToSocket = usernameToSocket;
+    }
+
+    public Map<String, ChatGroup> getGroupNameToGroup() {
+        return groupNameToGroup;
+    }
+
+    public void setGroupNameToGroup(Map<String, ChatGroup> groupNameToGroup) {
+        this.groupNameToGroup = groupNameToGroup;
+    }
+
+    public Map<String, User> getUsernameToUser() {
+        return usernameToUser;
+    }
+
+    public void setUsernameToUser(Map<String, User> usernameToUser) {
+        this.usernameToUser = usernameToUser;
     }
 }
